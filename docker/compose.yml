@@ -1,0 +1,19 @@
+# Run by the Mac wrapper against the `cryptic` Colima VM (docker --context colima-cryptic).
+name: cryptic
+services:
+  cryptic:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: cryptic:latest
+    container_name: cryptic
+    privileged: true        # dm-crypt, mount, losetup
+    network_mode: host      # Samba on the VM's loopback, forwarded to the Mac's 127.0.0.1:4450
+    init: true
+    environment:
+      - CRYPTIC_SMB_PW
+      - DM_DISABLE_UDEV=1     # the VM's udev never confirms dm devices: cryptsetup makes its own nodes
+    volumes:
+      - /dev:/dev           # hot-plugged sticks appear here
+      - ${CRYPTIC_CONFIG:?}:/home/cryptic/.config/cryptic
+      - ${CRYPTIC_CONFIG:?}/ctl:/ctl

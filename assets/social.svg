@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1280" height="640" viewBox="0 0 1280 640">
+  <!-- GitHub social preview: the Cryptic icon with the name and tagline -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#262A60"/><stop offset="1" stop-color="#161826"/></linearGradient>
+    <linearGradient id="body" x1="30" y1="49" x2="78" y2="83" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#B5ABFC"/><stop offset="1" stop-color="#796CBF"/></linearGradient>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <g transform="translate(110 150) scale(3.1)">
+    <path d="M42,51 V43 a12,12 0 0 1 24,0 V51" stroke="#B5ABFC" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <path d="M37,49 h34 a7,7 0 0 1 7,7 v20 a7,7 0 0 1 -7,7 h-34 a7,7 0 0 1 -7,-7 v-20 a7,7 0 0 1 7,-7 z" fill="url(#body)"/>
+    <path d="M54,58 a4.5,4.5 0 0 1 2.4,8.3 l1.1,7.2 h-7 l1.1,-7.2 A4.5,4.5 0 0 1 54,58 z" fill="#161826"/>
+    <circle cx="70" cy="77" r="2" fill="#7BC8A4"/>
+  </g>
+  <g font-family="DejaVu Sans, Helvetica, Arial, sans-serif">
+    <text x="520" y="290" font-size="88" font-weight="bold" fill="#EEEAFF">Cryptic</text>
+    <text x="520" y="370" font-size="56" fill="#B5ABFC">TUI</text>
+    <text x="522" y="440" font-size="30" fill="#CFC9F5">LUKS2 encrypted drives on Linux and macOS</text>
+    <text x="522" y="490" font-size="24" fill="#8C84C8">Standard cryptsetup format · terminal UI · no telemetry</text>
+  </g>
+</svg>

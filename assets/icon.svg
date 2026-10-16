@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 108 108">
+  <!-- Cryptic avatar: the launcher icon (padlock whose body is a drive) on its background, sized for circular crops -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="108" y2="108" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#262A60"/><stop offset="1" stop-color="#161826"/></linearGradient>
+    <linearGradient id="body" x1="30" y1="49" x2="78" y2="83" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#B5ABFC"/><stop offset="1" stop-color="#796CBF"/></linearGradient>
+  </defs>
+  <rect width="108" height="108" fill="url(#bg)"/>
+  <g transform="translate(54 54) scale(1.05) translate(-54 -55.5)">
+    <path d="M42,51 V43 a12,12 0 0 1 24,0 V51" stroke="#B5ABFC" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <path d="M37,49 h34 a7,7 0 0 1 7,7 v20 a7,7 0 0 1 -7,7 h-34 a7,7 0 0 1 -7,-7 v-20 a7,7 0 0 1 7,-7 z" fill="url(#body)"/>
+    <path d="M54,58 a4.5,4.5 0 0 1 2.4,8.3 l1.1,7.2 h-7 l1.1,-7.2 A4.5,4.5 0 0 1 54,58 z" fill="#161826"/>
+    <circle cx="70" cy="77" r="2" fill="#7BC8A4"/>
+  </g>
+</svg>
