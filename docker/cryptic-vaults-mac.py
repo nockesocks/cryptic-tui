@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""cryptic on macOS.
+"""Cryptic Vaults on macOS.
 
-Runs the Linux cryptic in a container inside a QEMU VM (Colima profile `cryptic`), plugs every external disk
-into that VM through QEMU's monitor socket (QMP) while cryptic runs, and mounts each stick cryptic unlocks
+Runs the Linux Cryptic Vaults in a container inside a QEMU VM (Colima profile `cryptic-vaults`), plugs every external disk
+into that VM through QEMU's monitor socket (QMP) while Cryptic Vaults runs, and mounts each stick Cryptic Vaults unlocks
 at <mount folder>/<name> over SMB. Standard library only: runs on the Mac's /usr/bin/python3.
 
-Layout (install.sh): ~/.local/share/cryptic/{cryptic.py,docker/}; settings, mac.json and ctl/ in
-~/.config/cryptic/tui/ — only that subfolder goes into the container (the phone app's signing key lives
+Layout (install.sh): ~/.local/share/cryptic-vaults/{cryptic_vaults.py,docker/}; settings, mac.json and ctl/ in
+~/.config/cryptic-vaults/tui/ — only that subfolder goes into the container (the phone app's signing key lives
 one level up on this Mac).
 """
 import hashlib
@@ -25,8 +25,8 @@ import threading
 import time
 from pathlib import Path
 
-PROFILE = "cryptic"
-LINKS = ("https://github.com/nockesocks/cryptic-tui/releases/latest",  # the only pages cryptic may open
+PROFILE = "cryptic-vaults"
+LINKS = ("https://github.com/nockesocks/cryptic-vaults/releases/latest",  # the only pages Cryptic Vaults may open
          "https://nockesocks.github.io/tip/?")
 APP_DIR = Path(__file__).resolve().parent.parent
 TERM_RESET = "\033[?1000l\033[?1003l\033[?1015l\033[?1006l\033[?1004l\033[?2004l\033[?1049l\033[?25h"
@@ -40,11 +40,11 @@ def say(msg):
 USER = os.environ.get("SUDO_USER") or pwd.getpwuid(os.getuid()).pw_name
 PW = pwd.getpwnam(USER)
 HOME = Path(PW.pw_dir)
-CONFIG = HOME / ".config" / "cryptic" / "tui"
+CONFIG = HOME / ".config" / "cryptic-vaults" / "tui"
 CTL = CONFIG / "ctl"
 DOCKER = ["docker", "--context", f"colima-{PROFILE}"]  # never DOCKER_CONTEXT: `colima stop` would then reset
 USER_ENV = {"HOME": str(HOME), "USER": USER,                # the user's active context to `default`
-            "PATH": os.environ.get("CRYPTIC_PATH") or "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"}
+            "PATH": os.environ.get("CRYPTIC_VAULTS_PATH") or "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"}
 
 
 def as_user(cmd, check=True, **kw):
@@ -58,7 +58,7 @@ def mount_folder() -> Path:
         folder = json.loads((CONFIG / "mac.json").read_text())["mount_folder"]
         return HOME / folder[2:] if folder.startswith("~/") else Path(folder)  # HOME is root's under sudo
     except (OSError, ValueError, KeyError):
-        return HOME / "cryptic"
+        return HOME / "cryptic-vaults"
 
 
 def display_folder() -> str:
@@ -139,7 +139,7 @@ def external_disks() -> set:
 
 def log(msg: str):
     """Wrapper errors go to a file: printing would draw over the TUI."""
-    with open(CONFIG / "cryptic-mac.log", "a") as f:
+    with open(CONFIG / "cryptic-vaults-mac.log", "a") as f:
         f.write(f"{time.strftime('%F %T')} {msg}\n")
 
 
@@ -220,10 +220,10 @@ class Bridge(threading.Thread):
             self.push_state()
 
     def open_share(self, op: str, path: Path):
-        """Finder, a new window of the terminal cryptic runs in, or the clipboard — as the user, on the Mac."""
+        """Finder, a new window of the terminal Cryptic Vaults runs in, or the clipboard — as the user, on the Mac."""
         if op == "finder":
             as_user(["/usr/bin/open", str(path)], check=False)
-        elif op == "terminal":  # the app that started cryptic; Terminal.app if macOS didn't say
+        elif op == "terminal":  # the app that started Cryptic Vaults; Terminal.app if macOS didn't say
             app = os.environ.get("__CFBundleIdentifier") or "com.apple.Terminal"
             as_user(["/usr/bin/open", "-b", app, str(path)], check=False)
         else:
@@ -234,13 +234,13 @@ class Bridge(threading.Thread):
         if os.geteuid() == 0:
             os.chown(self.prefs_file, PW.pw_uid, PW.pw_gid)
         state = [{**{k: i[k] for k in ("id", "name", "size")}, "auto": self.auto(d),
-                  "where": "cryptic" if d in self.disks else "mac"} for d, i in sorted(self.info.items())]
-        as_user([*DOCKER, "exec", "-i", "cryptic", "sh", "-c",
-                 "mkdir -p /run/cryptic && cat > /run/cryptic/drives.new && mv /run/cryptic/drives.new /run/cryptic/drives.json"],
+                  "where": "cryptic-vaults" if d in self.disks else "mac"} for d, i in sorted(self.info.items())]
+        as_user([*DOCKER, "exec", "-i", "cryptic-vaults", "sh", "-c",
+                 "mkdir -p /run/cryptic-vaults && cat > /run/cryptic-vaults/drives.new && mv /run/cryptic-vaults/drives.new /run/cryptic-vaults/drives.json"],
                 input=json.dumps(state).encode(), check=False, capture_output=True)
 
     def plug(self, d: str):
-        subprocess.run(["/usr/sbin/diskutil", "unmountDisk", d], capture_output=True)  # it's cryptic's now
+        subprocess.run(["/usr/sbin/diskutil", "unmountDisk", d], capture_output=True)  # it's Cryptic Vaults' now
         os.chown(f"/dev/r{d}", PW.pw_uid, -1)  # QEMU runs as the user; reset on unplug or replug
         q = QMP()
         try:
@@ -273,7 +273,7 @@ class Bridge(threading.Thread):
         for name in sorted(wanted - self.mounted):
             target = self.base / name
             as_user(["mkdir", "-p", str(target)])
-            url = f"//cryptic:{self.smb_pw}@127.0.0.1:4450/{name}"
+            url = f"//cryptic-vaults:{self.smb_pw}@127.0.0.1:4450/{name}"
             if as_user(["/sbin/mount_smbfs", "-N", url, str(target)], check=False, capture_output=True).returncode == 0:
                 self.mounted.add(name)
         for name in sorted(self.mounted - wanted):
@@ -283,7 +283,7 @@ class Bridge(threading.Thread):
         target = self.base / name
         cmd = ["/sbin/umount", "-f", str(target)] if force else ["/sbin/umount", str(target)]
         if os.path.ismount(target) and as_user(cmd, check=False, capture_output=True).returncode != 0:
-            return False  # busy on the Mac: cryptic tells the user to close the files
+            return False  # busy on the Mac: Cryptic Vaults tells the user to close the files
         try:
             target.rmdir()
         except OSError:
@@ -294,27 +294,27 @@ class Bridge(threading.Thread):
 
 def close_all_in_vm():
     """Only matters if the TUI died: a mapper left open outlives the container in the VM's kernel."""
-    as_user([*DOCKER, "exec", "cryptic", "sh", "-c",
+    as_user([*DOCKER, "exec", "cryptic-vaults", "sh", "-c",
              'for m in /media/*; do mountpoint -q "$m" && umount "$m"; done; '
-             'for d in /dev/mapper/cryptic_*; do [ -e "$d" ] && cryptsetup close "${d##*/}"; done; true'],
+             'for d in /dev/mapper/cryptic-vaults_*; do [ -e "$d" ] && cryptsetup close "${d##*/}"; done; true'],
             check=False, capture_output=True)
 
 
 def compose(*args, **kw):
-    env = {"CRYPTIC_CONFIG": str(CONFIG), **kw.pop("env", {})}
+    env = {"CRYPTIC_VAULTS_CONFIG": str(CONFIG), **kw.pop("env", {})}
     return as_user([*DOCKER, "compose", "-f", str(APP_DIR / "docker" / "compose.yml"), *args], env=env, **kw)
 
 
 def start_vm():
-    say("starting the cryptic VM")
+    say("starting the Cryptic Vaults VM")
     as_user(["colima", "start", PROFILE, "--vm-type", "qemu", "--cpus", "2", "--memory", "4", "--disk", "10",
              "--activate=false"], stdout=subprocess.DEVNULL)
 
 
 def build():
-    """install.sh: build the image once, so the first `cryptic` starts quickly."""
+    """install.sh: build the image once, so the first `cryptic-vaults` starts quickly."""
     start_vm()
-    say("building the cryptic image")
+    say("building the Cryptic Vaults image")
     compose("build")
     as_user(["colima", "stop", PROFILE], check=False, capture_output=True)
 
@@ -324,25 +324,25 @@ def main():
         return build()
     if os.geteuid() != 0:  # sudo first, as on Linux; the raw disks are root-only
         env = [f"{k}={os.environ[k]}" for k in ("TERM", "COLORTERM", "LANG", "__CFBundleIdentifier") if k in os.environ]
-        os.execvp("sudo", ["sudo", "/usr/bin/env", *env, f"CRYPTIC_PATH={os.environ.get('PATH', '')}",
+        os.execvp("sudo", ["sudo", "/usr/bin/env", *env, f"CRYPTIC_VAULTS_PATH={os.environ.get('PATH', '')}",
                            sys.executable, os.path.abspath(__file__), *sys.argv[1:]])
     if USER == "root":
-        sys.exit("run cryptic as yourself, not as root")
+        sys.exit("run Cryptic Vaults as yourself, not as root")
     for d in (CONFIG, CTL, CTL / "shares", CTL / "requests"):
         as_user(["mkdir", "-p", str(d)])
     for p in [*(CTL / "shares").glob("*"), *(CTL / "requests").glob("*")]:
         p.unlink()
     start_vm()
     smb_pw = secrets.token_urlsafe(24)
-    compose("up", "-d", "--force-recreate", env={"CRYPTIC_SMB_PW": smb_pw},
+    compose("up", "-d", "--force-recreate", env={"CRYPTIC_VAULTS_SMB_PW": smb_pw},
             stdout=subprocess.DEVNULL)
     bridge = Bridge(smb_pw)
     bridge.start()
     signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ctrl+C belongs to the TUI
     try:
         as_user([*DOCKER, "exec", "-it", "-e", f"TERM={os.environ.get('TERM', 'xterm-256color')}",
-                 "-e", f"COLORTERM={os.environ.get('COLORTERM', 'truecolor')}", "-e", "CRYPTIC_HOST=macos", "-e", f"CRYPTIC_MAC_FOLDER={display_folder()}",
-                 "-e", "SUDO_USER=cryptic", "cryptic", "python3", "/app/cryptic.py"], check=False)
+                 "-e", f"COLORTERM={os.environ.get('COLORTERM', 'truecolor')}", "-e", "CRYPTIC_VAULTS_HOST=macos", "-e", f"CRYPTIC_VAULTS_MAC_FOLDER={display_folder()}",
+                 "-e", "SUDO_USER=cryptic-vaults", "cryptic-vaults", "python3", "/app/cryptic_vaults.py"], check=False)
     finally:
         if sys.stdout.isatty():
             print(TERM_RESET, end="", flush=True)
@@ -353,9 +353,8 @@ def main():
         for name in sorted(bridge.mounted):  # only left over if the TUI died
             bridge.release(name, force=True)
         close_all_in_vm()
-        for d in sorted(bridge.disks):  # eject: left attached, macOS would ask what to do with an unreadable disk
+        for d in sorted(bridge.disks):  # left attached, so the next run sees it without a replug
             bridge.unplug(d)
-            subprocess.run(["/usr/sbin/diskutil", "eject", d], capture_output=True)
         compose("down", check=False, capture_output=True)
         as_user(["colima", "stop", PROFILE], check=False, capture_output=True)
         say("done")

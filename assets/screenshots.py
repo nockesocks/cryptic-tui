@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Regenerate the README screenshots (SVG) from the real TUI, with made-up drives.
 
-    docker build -f docker/Dockerfile -t cryptic .
-    docker run --rm -v "$PWD:/src" -w /src --entrypoint python3 cryptic assets/screenshots.py
+    docker build -f docker/Dockerfile -t cryptic-vaults .
+    docker run --rm -v "$PWD:/src" -w /src --entrypoint python3 cryptic-vaults assets/screenshots.py
 """
 import asyncio
 import json
@@ -29,7 +29,7 @@ def dev(name, typ, size, children=(), **kw):
 DRIVES = {"blockdevices": [
     dev("sda", "disk", 58.2 * G, [
         dev("sda1", "part", 58.2 * G, [
-            dev("cryptic_sda1", "crypt", 58.2 * G, fstype="ext4", fsver="1.0", label="Vault",
+            dev("cryptic-vaults_sda1", "crypt", 58.2 * G, fstype="ext4", fsver="1.0", label="Vault",
                 uuid="3f1c9a2e-7b4d-4e8a-9c21-5d6e7f8a9b0c", mountpoints=["/run/media/you/Vault"])],
             fstype="crypto_LUKS", fsver="2", label="Vault", uuid="8a7b6c5d-4e3f-4a1b-9c8d-7e6f5a4b3c2d",
             partlabel="Vault")],
@@ -73,7 +73,7 @@ def fake_lsblk(real):
 
 
 async def shoot(macos: bool):
-    import cryptic as c
+    import cryptic_vaults as c
     if macos:  # inside the Mac's VM sticks are plain SCSI disks, mounted under /media
         for d in DRIVES["blockdevices"]:
             d["tran"] = None
@@ -86,7 +86,7 @@ async def shoot(macos: bool):
     c.health = lambda disk: [("SMART", "[#a6e3a1]PASSED[/]")] if not macos else \
         [("SMART", "[#7f849c]not available on macOS[/]")]
     c.Ctx.settle = lambda self: None
-    app = c.Cryptic(False)
+    app = c.CrypticVaults(False)
     async with app.run_test(size=(150, 34)) as pilot:
         await pilot.pause(0.5)
         prefix = "mac-" if macos else ""
@@ -97,12 +97,12 @@ async def shoot(macos: bool):
             await pilot.pause(1.0)
             app.save_screenshot("details.svg", str(OUT))
         else:
-            Path("/run/cryptic").mkdir(parents=True, exist_ok=True)
-            Path("/run/cryptic/drives.json").write_text(json.dumps([
+            Path("/run/cryptic-vaults").mkdir(parents=True, exist_ok=True)
+            Path("/run/cryptic-vaults/drives.json").write_text(json.dumps([
                 {"id": "4C530001230915112233", "name": "SanDisk Ultra Fit", "size": int(58.2 * G),
-                 "auto": True, "where": "cryptic"},
+                 "auto": True, "where": "cryptic-vaults"},
                 {"id": "E0D55EA573F1", "name": "Kingston DataTraveler", "size": int(14.9 * G),
-                 "auto": True, "where": "cryptic"},
+                 "auto": True, "where": "cryptic-vaults"},
                 {"id": "S6XNNS0T912345", "name": "Samsung Portable SSD T7", "size": int(931.5 * G),
                  "auto": False, "where": "mac"}]))
             await pilot.press("d")
@@ -111,9 +111,9 @@ async def shoot(macos: bool):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 1:  # each mode needs a fresh import: CRYPTIC_HOST is read at import time
+    if len(sys.argv) == 1:  # each mode needs a fresh import: CRYPTIC_VAULTS_HOST is read at import time
         for mode in ("linux", "macos"):
-            env = {**os.environ, **({"CRYPTIC_HOST": "macos"} if mode == "macos" else {})}
+            env = {**os.environ, **({"CRYPTIC_VAULTS_HOST": "macos"} if mode == "macos" else {})}
             os.spawnve(os.P_WAIT, sys.executable, [sys.executable, __file__, mode], env)
     else:
         asyncio.run(shoot(sys.argv[1] == "macos"))

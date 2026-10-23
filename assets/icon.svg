@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 108 108">
-  <!-- Cryptic avatar: the launcher icon (padlock whose body is a drive) on its background, sized for circular crops -->
+  <!-- Cryptic Vaults avatar: the launcher icon (padlock whose body is a drive) on its background, sized for circular crops -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="108" y2="108" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#262A60"/><stop offset="1" stop-color="#161826"/></linearGradient>
     <linearGradient id="body" x1="30" y1="49" x2="78" y2="83" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#B5ABFC"/><stop offset="1" stop-color="#796CBF"/></linearGradient>

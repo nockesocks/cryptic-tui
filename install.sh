@@ -1,14 +1,14 @@
 #!/bin/sh
-# cryptic installer — installs dependencies and the `cryptic` command.
+# Cryptic Vaults installer — installs dependencies and the `cryptic-vaults` command.
 #
 #   From a clone:   ./install.sh
-#   One-liner:      curl -fsSL https://raw.githubusercontent.com/nockesocks/cryptic-tui/main/install.sh | sh
+#   One-liner:      curl -fsSL https://raw.githubusercontent.com/nockesocks/cryptic-vaults/main/install.sh | sh
 #   Uninstall:      ./install.sh --uninstall
 set -eu
 
-REPO_RAW="https://raw.githubusercontent.com/nockesocks/cryptic-tui/main"
-LIB_DIR="/usr/local/lib/cryptic"
-BIN="/usr/local/bin/cryptic"
+REPO_RAW="https://raw.githubusercontent.com/nockesocks/cryptic-vaults/main"
+LIB_DIR="/usr/local/lib/cryptic-vaults"
+BIN="/usr/local/bin/cryptic-vaults"
 
 say()  { printf '\033[1;35m::\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m!!\033[0m %s\n' "$*" >&2; }
@@ -21,17 +21,17 @@ fetch() {  # fetch <repo path> <dest>: copy from this clone, or download when ru
 }
 SRC_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd || echo .)"
 
-# ── macOS: cryptic runs in a container inside a Colima VM (docker/cryptic-mac.py) ──
+# ── macOS: Cryptic Vaults runs in a container inside a Colima VM (docker/cryptic-vaults-mac.py) ──
 install_macos() {
-    SHARE="$HOME/.local/share/cryptic"
-    SHIM="$HOME/.local/bin/cryptic"
-    CONF="$HOME/.config/cryptic/tui/mac.json"
+    SHARE="$HOME/.local/share/cryptic-vaults"
+    SHIM="$HOME/.local/bin/cryptic-vaults"
+    CONF="$HOME/.config/cryptic-vaults/tui/mac.json"
     if [ "${1:-}" = "--uninstall" ]; then
-        say "removing cryptic (its VM, image and command)"
-        colima delete -f cryptic >/dev/null 2>&1 || true
+        say "removing Cryptic Vaults (its VM, image and command)"
+        colima delete -f cryptic-vaults >/dev/null 2>&1 || true
         rm -rf "$SHARE"
         rm -f "$SHIM"
-        say "done (your settings in ~/.config/cryptic/tui were left alone)"
+        say "done (your settings in ~/.config/cryptic-vaults/tui were left alone)"
         exit 0
     fi
     /usr/bin/python3 -c '' 2>/dev/null || die "python3 missing — install the command line tools: xcode-select --install"
@@ -42,24 +42,24 @@ install_macos() {
 
     say "installing to $SHARE"
     mkdir -p "$SHARE/docker" "$HOME/.local/bin" "$(dirname "$CONF")"
-    fetch cryptic.py "$SHARE/cryptic.py"
-    for f in Dockerfile compose.yml smb.conf entrypoint.sh cryptic-mac.py; do
+    fetch cryptic_vaults.py "$SHARE/cryptic_vaults.py"
+    for f in Dockerfile compose.yml smb.conf entrypoint.sh cryptic-vaults-mac.py; do
         fetch "docker/$f" "$SHARE/docker/$f"
     done
     chmod 755 "$SHARE/docker/entrypoint.sh"
 
     if [ ! -f "$CONF" ]; then
-        printf 'Folder where unlocked sticks appear [~/cryptic]: '
+        printf 'Folder where unlocked sticks appear [~/cryptic-vaults]: '
         read -r folder < /dev/tty || folder=""
-        folder="${folder:-~/cryptic}"
+        folder="${folder:-~/cryptic-vaults}"
         printf '{"mount_folder": "%s"}\n' "$folder" > "$CONF"
     fi
 
-    /usr/bin/python3 "$SHARE/docker/cryptic-mac.py" --build
-    printf '#!/bin/sh\nexec /usr/bin/python3 "%s/docker/cryptic-mac.py" "$@"\n' "$SHARE" > "$SHIM"
+    /usr/bin/python3 "$SHARE/docker/cryptic-vaults-mac.py" --build
+    printf '#!/bin/sh\nexec /usr/bin/python3 "%s/docker/cryptic-vaults-mac.py" "$@"\n' "$SHARE" > "$SHIM"
     chmod 755 "$SHIM"
     case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) warn "add ~/.local/bin to your PATH" ;; esac
-    say "done — type  cryptic  to start"
+    say "done — type  cryptic-vaults  to start"
     exit 0
 }
 [ "$(uname)" = Darwin ] && install_macos "$@"
@@ -70,10 +70,10 @@ if [ "$(id -u)" -eq 0 ]; then SUDO=""; else
 fi
 
 if [ "${1:-}" = "--uninstall" ]; then
-    say "removing cryptic"
+    say "removing Cryptic Vaults"
     $SUDO rm -f "$BIN"
     $SUDO rm -rf "$LIB_DIR"
-    say "done (your settings in ~/.config/cryptic were left alone)"
+    say "done (your settings in ~/.config/cryptic-vaults were left alone)"
     exit 0
 fi
 
@@ -115,15 +115,15 @@ fi
 # ── 3. the app ────────────────────────────────────────────────────────
 SRC="$(mktemp)"
 trap 'rm -f "$SRC"' EXIT
-fetch cryptic.py "$SRC"
+fetch cryptic_vaults.py "$SRC"
 
 say "installing to $LIB_DIR and $BIN"
 $SUDO mkdir -p "$LIB_DIR"
-$SUDO install -m 755 "$SRC" "$LIB_DIR/cryptic.py"
+$SUDO install -m 755 "$SRC" "$LIB_DIR/cryptic_vaults.py"
 $SUDO sh -c "cat > '$BIN'" <<EOF
 #!/bin/sh
-exec $PY $LIB_DIR/cryptic.py "\$@"
+exec $PY $LIB_DIR/cryptic_vaults.py "\$@"
 EOF
 $SUDO chmod 755 "$BIN"
 
-say "done — type  cryptic  to start"
+say "done — type  cryptic-vaults  to start"

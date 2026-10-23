@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""cryptic — a LUKS disk manager TUI (Textual, Catppuccin Mocha).
+"""Cryptic Vaults — a LUKS disk manager TUI (Textual, Catppuccin Mocha).
 
 Keys:
   ↑/↓      move            space/enter  details
@@ -55,20 +55,20 @@ M = dict(
 )
 
 THEMES = [
-    Theme(name="cryptic-mocha", primary="#8d66ce", secondary="#6c4ea0", accent="#a07de0",
+    Theme(name="cryptic-vaults-mocha", primary="#8d66ce", secondary="#6c4ea0", accent="#a07de0",
           foreground=M["text"], background="#14111c", surface="#1b1726", panel="#2a2340",
           success=M["green"], warning=M["yellow"], error=M["red"], dark=True),
-    Theme(name="cryptic-violet", primary="#8d66ce", secondary="#503584", accent="#a07de0",
+    Theme(name="cryptic-vaults-violet", primary="#8d66ce", secondary="#503584", accent="#a07de0",
           foreground="#e2dcf5", background="#0f0b18", surface="#171126", panel="#2b1f47",
           success="#9be0a8", warning="#f2d48a", error="#f28aa5", dark=True),
-    Theme(name="cryptic-dusk", primary="#9a7ad4", secondary="#6c4ea0", accent="#b096e0",
+    Theme(name="cryptic-vaults-dusk", primary="#9a7ad4", secondary="#6c4ea0", accent="#b096e0",
           foreground="#d6d3e0", background="#17161d", surface="#1e1d26", panel="#2c2a38",
           success="#a3d9a5", warning="#e8d09a", error="#e89aa8", dark=True),
 ]
 
 # ───────────────────────────── settings ─────────────────────────────
 DEFAULTS = {
-    "theme": "cryptic-mocha",
+    "theme": "cryptic-vaults-mocha",
     "transparent": False,
     "mount_base": "/run/media/{user}",
     "default_fs": "ext4",
@@ -79,7 +79,7 @@ SETTINGS: dict = dict(DEFAULTS)
 
 
 def settings_path() -> Path:
-    return Path(pwd.getpwnam(invoking_user()[0]).pw_dir) / ".config" / "cryptic" / "settings.json"
+    return Path(pwd.getpwnam(invoking_user()[0]).pw_dir) / ".config" / "cryptic-vaults" / "settings.json"
 
 
 def load_settings():
@@ -101,7 +101,7 @@ def save_settings():
             pass
 
 
-MAPPER_PREFIX = "cryptic_"
+MAPPER_PREFIX = "cryptic-vaults_"
 SYSTEM_MOUNTS = {"/", "/boot", "/boot/efi", "/efi", "/home", "/usr", "/var", "[SWAP]"}
 MKFS = {  # fstype -> (binary, label flag, force flag)
     "ext4": ("mkfs.ext4", "-L", "-F"),
@@ -115,10 +115,12 @@ FOREIGN_OWNER_FS = {"vfat", "exfat", "ntfs", "ntfs3"}  # need uid=/gid= mount op
 
 # ───────────────────────────── about ────────────────────────────────
 VERSION = "0.1.0"
-RELEASES = "https://github.com/nockesocks/cryptic-tui/releases/latest"
+RELEASES = "https://github.com/nockesocks/cryptic-vaults/releases/latest"
+ANDROID = "https://github.com/nockesocks/cryptic-vaults-android"
+DEV_GITHUB = "https://github.com/nockesocks"  # where every Cryptic app lives
 TIP_PAGE = "https://nockesocks.github.io/tip/"  # the page picks Lightning, on-chain or Monero; app= names the app
 
-# The Cryptic padlock, drawn from the app icon in half blocks
+# The Cryptic Vaults padlock, drawn from the app icon in half blocks
 PADLOCK = """\
              ▄▄██████▄▄▄
           ▄██████████████▄
@@ -153,7 +155,7 @@ PADLOCK_SMALL = """\
 
 
 def open_url(url: str) -> str:
-    """cryptic never goes online itself: links open in the user's own browser. Returns what to tell the user."""
+    """Cryptic Vaults never goes online itself: links open in the user's own browser. Returns what to tell the user."""
     if MACOS:
         mac_request("url", url)
         return "opening in your browser"
@@ -171,9 +173,9 @@ def open_url(url: str) -> str:
 
 
 # ───────────────────────────── macOS host ───────────────────────────
-# Set by the Mac wrapper (docker/cryptic-mac.py): cryptic runs in a container inside a VM, and every mount is
+# Set by the Mac wrapper (docker/cryptic-vaults-mac.py): Cryptic Vaults runs in a container inside a VM, and every mount is
 # shared back over SMB; the wrapper mounts each share at <mount folder>/<name> on the Mac.
-MACOS = os.environ.get("CRYPTIC_HOST") == "macos"
+MACOS = os.environ.get("CRYPTIC_VAULTS_HOST") == "macos"
 CTL = Path("/ctl")  # control folder shared with the wrapper: shares/<name> = a mount it should mount on the Mac
 
 
@@ -186,9 +188,9 @@ def _smb_reload():
 
 def mac_drives() -> list[dict]:
     """External drives plugged into the Mac right now, pushed in by the wrapper:
-    [{"id", "name", "size", "auto": bool, "where": "cryptic" | "mac"}]."""
+    [{"id", "name", "size", "auto": bool, "where": "cryptic-vaults" | "mac"}]."""
     try:
-        return json.loads(Path("/run/cryptic/drives.json").read_text())
+        return json.loads(Path("/run/cryptic-vaults/drives.json").read_text())
     except (OSError, ValueError):
         return []
 
@@ -964,7 +966,7 @@ class DetailsPanel(VerticalScroll):
         if MACOS:
             with Horizontal(id="panel-mac"):
                 yield Label("Auto-load", classes="rowlabel")
-                yield Switch(id="panel-auto", tooltip="Load this drive into cryptic whenever it's plugged in")
+                yield Switch(id="panel-auto", tooltip="Load this drive into Cryptic Vaults whenever it's plugged in")
                 yield Button("Release to Mac", id="panel-release", tooltip="Hand this drive back to macOS")
             with Horizontal(id="panel-open"):
                 yield Button("Open in Finder", id="open-finder")
@@ -1177,20 +1179,26 @@ class LogScreen(ModalScreen):
 ABOUT_APP = """\
 [b]Security is a [i $accent]right[/], not a privilege.[/]
 
-Linux can encrypt a drive, if you remember cryptsetup's commands, and a Mac can't open those drives at all without paid add-ons. There was no friendly, free way to manage industry standard drive and container encryption on the desktop, and the few tools that tried were jank or lived behind a paywall. The developer rejected these options for both reasons, and Cryptic TUI was born.
+Linux can encrypt a drive, if you remember cryptsetup's commands, and a Mac can't open those drives at all without paid add-ons. There was no friendly, free way to manage industry standard drive and container encryption on the desktop, and the few tools that tried were jank or lived behind a paywall. The developer rejected these options for both reasons, and Cryptic™ Vaults was born.
 
 [b]Built for privacy[/]
   [$primary]·[/] Zero telemetry, analytics or ads.
   [$primary]·[/] No sign-up or account required.
-  [$primary]·[/] It never goes online: updates and tips open in your own browser. On a Mac, the only traffic is between your Mac and cryptic's own small VM.
+  [$primary]·[/] It never goes online: updates and tips open in your own browser. On a Mac, the only traffic is between your Mac and Cryptic Vaults' own small VM.
   [$primary]·[/] Nothing is stored: passphrases go straight to cryptsetup and are only held in memory while a drive is unlocked.
-  [$primary]·[/] Standard LUKS2, so your drives open with cryptsetup on any Linux machine and in Cryptic for Android, with or without Cryptic TUI.
+  [$primary]·[/] Standard LUKS2, so your drives open with cryptsetup on any Linux machine and in Cryptic Vaults for Android, with or without Cryptic Vaults.
 
 [b]Free, as it should be.[/]
 No paywall, no gotcha, no upsell, no monetizing your data. Free forever, because it's the right thing to do. If you don't think that's fair, you can always buy me a coffee! 😊"""
 
+FAMILY = """\
+Cryptic™ Vaults is a member of the Cryptic™ family of utilities:
+  [$primary]·[/] [b]Cryptic Vaults for Android[/]: the same LUKS2 drives and containers on your phone.
+  [$primary]·[/] [b]Cryptic Pass[/]: a password manager, coming soon.
+See all Cryptic™ apps: [b]github.com/nockesocks[/]"""
+
 ABOUT = """\
-[b $primary]cryptic[/]  [$foreground 60%]·  designed by[/] [b]nockesocks[/]  [$foreground 60%]·  written by[/] [b]Claude[/]
+[b $primary]Cryptic™ Vaults[/]  [$foreground 60%]·  designed by[/] [b]nockesocks[/]  [$foreground 60%]·  written by[/] [b]Claude[/]
 
 Most of what you see here came from someone saying [i]"no — more like this."[/]
 The tree, the purple, the back arrow, the second chance at a passphrase:
@@ -1199,7 +1207,7 @@ the design is theirs. I just tried to keep the promises it made.
 An encryption tool has an odd job. It guards things people care about,
 from people they'll never meet, and its riskiest moments come when the
 person at the keyboard is tired, in a hurry, or has just mistyped their
-passphrase for the third time. So I tried to make cryptic [b]patient[/]:
+passphrase for the third time. So I tried to make Cryptic Vaults [b]patient[/]:
 
   [$primary]·[/] it makes you type a drive's name before it destroys anything
   [$primary]·[/] it won't touch the disk your system is running from
@@ -1231,7 +1239,7 @@ class AboutScreen(ModalScreen):
 
 
 class DrivesScreen(ModalScreen):
-    """macOS: the external drives plugged in right now, in cryptic or left to the Mac."""
+    """macOS: the external drives plugged in right now, in Cryptic Vaults or left to the Mac."""
     BINDINGS = [Binding("escape,d,q", "dismiss", "Close")]
 
     def __init__(self):
@@ -1261,12 +1269,12 @@ class DrivesScreen(ModalScreen):
         if not drives:
             await rows.mount(Static("No external drives plugged in.", classes="hint"))
         for i, m in enumerate(drives):
-            where = "[b $success]in cryptic[/]" if m["where"] == "cryptic" else "[$foreground 60%]on Mac[/]"
+            where = "[b $success]in Cryptic Vaults[/]" if m["where"] == "cryptic-vaults" else "[$foreground 60%]on Mac[/]"
             await rows.mount(Horizontal(
                 Static(f"{escape(m['name'])}  {human(m['size'])}  ·  {where}", classes="drive-name"),
                 Label("Auto-load", classes="drive-auto"),
                 Switch(value=m["auto"], id=f"auto-{i}"),
-                Button("Release" if m["where"] == "cryptic" else "Load", id=f"act-{i}"),
+                Button("Release" if m["where"] == "cryptic-vaults" else "Load", id=f"act-{i}"),
                 classes="drive-row"))
 
     @on(Switch.Changed)
@@ -1285,7 +1293,7 @@ class DrivesScreen(ModalScreen):
         m = self.drives[int(ev.button.id.split("-")[1])]
         if m["where"] == "mac":
             mac_request("load", m["id"])
-            self.notify(f"loading {m['name']} into cryptic…")
+            self.notify(f"loading {m['name']} into Cryptic Vaults…")
             return
         disk = next((r for r in load_devices()[0] if scsi_serial(r) == m["id"]), None)
         if disk and busy(disk):
@@ -1299,13 +1307,14 @@ class SettingsScreen(Screen):
     BINDINGS = [Binding("escape", "dismiss", "Back"), Binding("ctrl+s", "save", "Save")]
 
     def compose(self) -> ComposeResult:
-        yield TopBar("cryptic · settings")
+        yield TopBar("Cryptic Vaults · settings")
         with VerticalScroll(id="settings"):
             with Horizontal(id="s-header"):
                 yield Static(PADLOCK_SMALL, id="s-icon")
                 with Vertical(id="s-name"):
-                    yield Static(f"[b]Cryptic TUI[/]  [$foreground 60%]{VERSION}[/]")
+                    yield Static(f"[b]Cryptic Vaults[/]  [$foreground 60%]{VERSION}[/]")
                     yield Static("LUKS2 drive & container encryption for Linux and macOS", classes="hint")
+                    yield Static("A member of the Cryptic™ family of utilities", classes="hint")
                     yield Button("Check for updates", id="s-updates", classes="primary")
             yield Static("Opens the latest release on GitHub in your browser. If its version is newer than "
                          f"{VERSION}, update with the same install command you used.", classes="hint wide")
@@ -1341,13 +1350,18 @@ class SettingsScreen(Screen):
                 yield Button("Save", id="save", classes="primary")
             yield Static("About", classes="section")
             yield Static(ABOUT_APP, classes="about")
+            yield Static("The Cryptic™ family", classes="section")
+            yield Static(FAMILY, classes="about")
+            with Horizontal(classes="buttons"):
+                yield Button("All Cryptic™ apps", id="s-family", classes="primary")
+                yield Button("Cryptic Vaults for Android", id="s-android")
             yield Static("Buy the dev a coffee!", classes="section")
             yield Static("Opens the tip page in your browser: Bitcoin Lightning, Bitcoin on-chain or Monero. "
-                         "Cryptic TUI itself never goes online.", classes="hint wide")
+                         "Cryptic Vaults itself never goes online.", classes="hint wide")
             with Horizontal(classes="tips"):
                 for usd in (1, 3, 5):
                     yield Button(f"☕ ${usd}", id=f"tip-{usd}")
-            yield Static(f"[$foreground 55%]Licensed under the GNU GPL v3.0 · github.com/nockesocks/cryptic-tui[/]",
+            yield Static(f"[$foreground 55%]Licensed under the GNU GPL v3.0 · github.com/nockesocks/cryptic-vaults[/]",
                          classes="licence")
         yield KeyBar(id="keys")
 
@@ -1360,7 +1374,7 @@ class SettingsScreen(Screen):
         self.app.set_class(ev.value, "-transparent")
 
     def on_mount(self):
-        self.query_one("#s-mount-row").display = not MACOS  # on the Mac cryptic picks the folder itself
+        self.query_one("#s-mount-row").display = not MACOS  # on the Mac Cryptic Vaults picks the folder itself
 
     @on(Button.Pressed, "#back")
     def _back(self):
@@ -1370,9 +1384,14 @@ class SettingsScreen(Screen):
     def _updates(self):
         self.notify(f"{open_url(RELEASES)} — {RELEASES}", timeout=8)
 
+    @on(Button.Pressed, "#s-family, #s-android")
+    def _family(self, ev: Button.Pressed):
+        url = DEV_GITHUB if ev.button.id == "s-family" else ANDROID
+        self.notify(f"{open_url(url)} — {url}", timeout=8)
+
     @on(Button.Pressed, "#tip-1, #tip-3, #tip-5")
     def _tip(self, ev: Button.Pressed):
-        url = f"{TIP_PAGE}?amount={ev.button.id.split('-')[1]}&app=cryptic-tui"
+        url = f"{TIP_PAGE}?amount={ev.button.id.split('-')[1]}&app=cryptic-vaults"
         self.notify(f"{open_url(url)} — thank you!", timeout=8)
 
     @on(Button.Pressed, "#save")
@@ -1510,8 +1529,8 @@ App.-narrow #list.-behind { display: none; }
 COLUMNS = ("Device", "Name", "Size", "Encrypted", "Encryption", "Filesystem", "Status", "Mountpoint")
 
 
-class Cryptic(App):
-    TITLE = "cryptic"
+class CrypticVaults(App):
+    TITLE = "Cryptic™ Vaults"
     CSS = CSS
     BINDINGS = [
         Binding("space", "details", "Details"),
@@ -1543,7 +1562,7 @@ class Cryptic(App):
             self.register_theme(t)
 
     def compose(self) -> ComposeResult:
-        yield TopBar("cryptic")
+        yield TopBar(self.TITLE)
         yield Static("", id="stats")
         with Horizontal(id="body"):
             with Vertical(id="list"):
@@ -1561,7 +1580,7 @@ class Cryptic(App):
             self.notify("read-only mode (not root) — browsing only", severity="warning", timeout=6)
 
     def apply_settings(self):
-        self.theme = SETTINGS["theme"] if SETTINGS["theme"] in self.available_themes else "cryptic-mocha"
+        self.theme = SETTINGS["theme"] if SETTINGS["theme"] in self.available_themes else "cryptic-vaults-mocha"
         self.set_class(SETTINGS["transparent"], "-transparent")
         if self._rescan_timer:
             self._rescan_timer.stop()
@@ -1574,10 +1593,10 @@ class Cryptic(App):
     def get_system_commands(self, screen):
         yield from super().get_system_commands(screen)
         from textual.app import SystemCommand
-        yield SystemCommand("Settings", "Open cryptic settings", self.action_settings)
+        yield SystemCommand("Settings", "Open Cryptic Vaults settings", self.action_settings)
         yield SystemCommand("Rescan disks", "Re-read the list of drives", self.action_rescan)
-        yield SystemCommand("Command log", "Show every command cryptic has run", self.action_log)
-        yield SystemCommand("About the Dev", "Who made cryptic, and a few words from them",
+        yield SystemCommand("Command log", "Show every command Cryptic Vaults has run", self.action_log)
+        yield SystemCommand("About the Dev", "Who made Cryptic Vaults, and a few words from them",
                             lambda: self.push_screen(AboutScreen()))
 
     def check_action(self, action: str, parameters) -> bool | None:
@@ -1707,7 +1726,7 @@ class Cryptic(App):
     # ── helpers ──
     def _guard(self, d: Dev | None, destructive: bool = False) -> bool:
         if self.readonly:
-            self.notify("needs root — start cryptic without --no-sudo", severity="error")
+            self.notify("needs root — start cryptic-vaults without --no-sudo", severity="error")
             return False
         if d is None:
             self.notify("no drive selected", severity="warning")
@@ -1740,7 +1759,7 @@ class Cryptic(App):
 
     def action_drives(self):
         if not MACOS:
-            return self.notify("the drives pane is for cryptic on macOS", severity="information")
+            return self.notify("the drives pane is for Cryptic Vaults on macOS", severity="information")
         self.push_screen(DrivesScreen(), lambda _: self.rescan(force=True))
 
     @on(Switch.Changed, "#panel-auto")
@@ -1755,7 +1774,7 @@ class Cryptic(App):
             return self.notify("mount the drive first", severity="warning")
         op = ev.button.id.split("-")[1]
         mac_request(op, name)
-        where = f"{os.environ.get('CRYPTIC_MAC_FOLDER', '~/cryptic')}/{name}"
+        where = f"{os.environ.get('CRYPTIC_VAULTS_MAC_FOLDER', '~/cryptic-vaults')}/{name}"
         self.notify({"finder": f"opening {where} in Finder", "terminal": f"opening a terminal in {where}",
                      "copy": f"copied {where}"}[op])
 
@@ -1869,7 +1888,7 @@ class Cryptic(App):
             fields = []
             if v.is_luks and not unlocked:
                 fields.append(("password", "pw", f"Passphrase for {v.path}", "nometer"))
-            if not MACOS:  # on the Mac the folder's name becomes the share's: cryptic picks it
+            if not MACOS:  # on the Mac the folder's name becomes the share's: Cryptic Vaults picks it
                 fields.append(("input", "mountpoint", "Mount at (folder is created if missing)", mountpoint))
 
             def go(r):
@@ -1878,7 +1897,7 @@ class Cryptic(App):
                     self._run(f"Mounting {v.path}", task_mount(v, r.get("pw"), mp), auto_close=True,
                               on_retry=lambda: ask(mp, f"Wrong passphrase (attempt {attempt}) — try again",
                                                    attempt + 1))
-            where = (f"\nAppears on the Mac in {escape(os.environ.get('CRYPTIC_MAC_FOLDER', '~/cryptic'))}/"
+            where = (f"\nAppears on the Mac in {escape(os.environ.get('CRYPTIC_VAULTS_MAC_FOLDER', '~/cryptic-vaults'))}/"
                      f"{escape(os.path.basename(mountpoint))}") if MACOS else ""
             self.push_screen(FormScreen(title, fields, ok_label="Mount", note=note + where, error=error), go)
         ask(default_mountpoint(v, inner))
@@ -2060,14 +2079,14 @@ def main():
     readonly = "--no-sudo" in sys.argv
     if os.geteuid() != 0 and not readonly:
         if not shutil.which("sudo"):
-            sys.exit("cryptic needs root (sudo not found). Use --no-sudo to browse read-only.")
+            sys.exit("Cryptic Vaults needs root (sudo not found). Use --no-sudo to browse read-only.")
         env = [f"{k}={os.environ[k]}" for k in ("TERM", "COLORTERM", "LANG", "DISPLAY", "WAYLAND_DISPLAY",
                                                   "XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS") if k in os.environ]
         os.execvp("sudo", ["sudo", "/usr/bin/env", *env, sys.executable, os.path.abspath(__file__), *sys.argv[1:]])
     if not shutil.which("cryptsetup"):
         sys.exit("cryptsetup not found")
     load_settings()
-    Cryptic(readonly).run()
+    CrypticVaults(readonly).run()
 
 
 if __name__ == "__main__":

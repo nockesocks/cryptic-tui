@@ -1,20 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1280" height="640" viewBox="0 0 1280 640">
-  <!-- GitHub social preview: the Cryptic icon with the name and tagline -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#262A60"/><stop offset="1" stop-color="#161826"/></linearGradient>
-    <linearGradient id="body" x1="30" y1="49" x2="78" y2="83" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#B5ABFC"/><stop offset="1" stop-color="#796CBF"/></linearGradient>
   </defs>
   <rect width="1280" height="640" fill="url(#bg)"/>
-  <g transform="translate(110 150) scale(3.1)">
-    <path d="M42,51 V43 a12,12 0 0 1 24,0 V51" stroke="#B5ABFC" stroke-width="6" stroke-linecap="round" fill="none"/>
-    <path d="M37,49 h34 a7,7 0 0 1 7,7 v20 a7,7 0 0 1 -7,7 h-34 a7,7 0 0 1 -7,-7 v-20 a7,7 0 0 1 7,-7 z" fill="url(#body)"/>
-    <path d="M54,58 a4.5,4.5 0 0 1 2.4,8.3 l1.1,7.2 h-7 l1.1,-7.2 A4.5,4.5 0 0 1 54,58 z" fill="#161826"/>
-    <circle cx="70" cy="77" r="2" fill="#7BC8A4"/>
-  </g>
-  <g font-family="DejaVu Sans, Helvetica, Arial, sans-serif">
-    <text x="520" y="290" font-size="88" font-weight="bold" fill="#EEEAFF">Cryptic</text>
-    <text x="520" y="370" font-size="56" fill="#B5ABFC">TUI</text>
-    <text x="522" y="440" font-size="30" fill="#CFC9F5">LUKS2 encrypted drives on Linux and macOS</text>
-    <text x="522" y="490" font-size="24" fill="#8C84C8">Standard cryptsetup format · terminal UI · no telemetry</text>
-  </g>
+  <svg x="128.0" y="234.7" width="148.9" height="170.6" viewBox="30.0 28.0 48.0 55.0"><defs><linearGradient id="body" x1="30" y1="49" x2="78" y2="83" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#B5ABFC"/><stop offset="1" stop-color="#796CBF"/></linearGradient></defs>
+<path d="M42,51 V43 a12,12 0 0 1 24,0 V51" stroke="#B5ABFC" stroke-width="6" stroke-linecap="round" fill="none"/>
+<path d="M37,49 h34 a7,7 0 0 1 7,7 v20 a7,7 0 0 1 -7,7 h-34 a7,7 0 0 1 -7,-7 v-20 a7,7 0 0 1 7,-7 z" fill="url(#body)"/>
+<path d="M54,58 a4.5,4.5 0 0 1 2.4,8.3 l1.1,7.2 h-7 l1.1,-7.2 A4.5,4.5 0 0 1 54,58 z" fill="#161826"/>
+<circle cx="70" cy="77" r="2" fill="#7BC8A4"/></svg>
+<text x="324.00215647842055" y="278.22115605631916" font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif" font-size="91" font-weight="700" fill="#ECE9FB" text-anchor="start" dominant-baseline="middle">Cryptic™ Vaults</text>
+<text x="324.00215647842055" y="353.834979250164" font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif" font-size="31" font-weight="500" fill="#ECE9FB" text-anchor="start" dominant-baseline="middle">Encrypted drives and containers for Linux, macOS and Android</text>
+<text x="324.00215647842055" y="395.61382319384484" font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif" font-size="24" font-weight="500" fill="#B5ABFC" text-anchor="start" dominant-baseline="middle">A member of the Cryptic™ family of utilities  ·  github.com/nockesocks</text>
 </svg>
