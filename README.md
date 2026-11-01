@@ -2,7 +2,7 @@
 
 <img src="assets/icon.svg" width="112" alt="Cryptic Vaults icon">
 
-# Cryptic™ Vaults for Linux and macOS
+# Cryptic Vaults for Linux and macOS
 
 *LUKS2 encrypted drives from your terminal*
 
@@ -206,13 +206,13 @@ Open its details and press **Release to Mac**, and switch **Auto-load** off so i
 
 ## Trademark
 
-Cryptic™ and the Cryptic padlock are trademarks of the developer. The license covers the code, not the name or the logo: a fork or a modified version you distribute needs its own name and icon.
+Cryptic and the Cryptic padlock are trademarks of the developer. The license covers the code, not the name or the logo: a fork or a modified version you distribute needs its own name and icon.
 
-## The Cryptic™ family
+## The Cryptic family
 
-Cryptic Vaults is a member of the Cryptic™ family of utilities. Check out our other apps:
+Cryptic Vaults is a member of the Cryptic family of utilities. Check out our other apps:
 
 - [Cryptic Vaults for Android](https://github.com/nockesocks/cryptic-vaults-android): the same LUKS2 drives and containers on your phone.
 - Cryptic Pass: a password manager. Coming soon.
 
-See all Cryptic™ apps on [github.com/nockesocks](https://github.com/nockesocks).
+See all Cryptic apps on [github.com/nockesocks](https://github.com/nockesocks?tab=repositories&q=cryptic).

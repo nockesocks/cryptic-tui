@@ -117,7 +117,7 @@ FOREIGN_OWNER_FS = {"vfat", "exfat", "ntfs", "ntfs3"}  # need uid=/gid= mount op
 VERSION = "0.1.0"
 RELEASES = "https://github.com/nockesocks/cryptic-vaults/releases/latest"
 ANDROID = "https://github.com/nockesocks/cryptic-vaults-android"
-DEV_GITHUB = "https://github.com/nockesocks"  # where every Cryptic app lives
+DEV_GITHUB = "https://github.com/nockesocks?tab=repositories&q=cryptic"  # the Cryptic apps only (a Cryptic org page later)
 TIP_PAGE = "https://nockesocks.github.io/tip/"  # the page picks Lightning, on-chain or Monero; app= names the app
 
 # The Cryptic Vaults padlock, drawn from the app icon in half blocks
@@ -1179,7 +1179,7 @@ class LogScreen(ModalScreen):
 ABOUT_APP = """\
 [b]Security is a [i $accent]right[/], not a privilege.[/]
 
-Linux can encrypt a drive, if you remember cryptsetup's commands, and a Mac can't open those drives at all without paid add-ons. There was no friendly, free way to manage industry standard drive and container encryption on the desktop, and the few tools that tried were jank or lived behind a paywall. The developer rejected these options for both reasons, and Cryptic™ Vaults was born.
+Linux can encrypt a drive, if you remember cryptsetup's commands, and a Mac can't open those drives at all without paid add-ons. There was no friendly, free way to manage industry standard drive and container encryption on the desktop, and the few tools that tried were jank or lived behind a paywall. The developer rejected these options for both reasons, and Cryptic Vaults was born.
 
 [b]Built for privacy[/]
   [$primary]·[/] Zero telemetry, analytics or ads.
@@ -1192,13 +1192,13 @@ Linux can encrypt a drive, if you remember cryptsetup's commands, and a Mac can'
 No paywall, no gotcha, no upsell, no monetizing your data. Free forever, because it's the right thing to do. If you don't think that's fair, you can always buy me a coffee! 😊"""
 
 FAMILY = """\
-Cryptic™ Vaults is a member of the Cryptic™ family of utilities:
+Cryptic Vaults is a member of the Cryptic family of utilities:
   [$primary]·[/] [b]Cryptic Vaults for Android[/]: the same LUKS2 drives and containers on your phone.
   [$primary]·[/] [b]Cryptic Pass[/]: a password manager, coming soon.
-See all Cryptic™ apps: [b]github.com/nockesocks[/]"""
+See all Cryptic apps: [b]github.com/nockesocks[/]"""
 
 ABOUT = """\
-[b $primary]Cryptic™ Vaults[/]  [$foreground 60%]·  designed by[/] [b]nockesocks[/]  [$foreground 60%]·  written by[/] [b]Claude[/]
+[b $primary]Cryptic Vaults[/]  [$foreground 60%]·  designed by[/] [b]nockesocks[/]  [$foreground 60%]·  written by[/] [b]Claude[/]
 
 Most of what you see here came from someone saying [i]"no — more like this."[/]
 The tree, the purple, the back arrow, the second chance at a passphrase:
@@ -1314,7 +1314,7 @@ class SettingsScreen(Screen):
                 with Vertical(id="s-name"):
                     yield Static(f"[b]Cryptic Vaults[/]  [$foreground 60%]{VERSION}[/]")
                     yield Static("LUKS2 drive & container encryption for Linux and macOS", classes="hint")
-                    yield Static("A member of the Cryptic™ family of utilities", classes="hint")
+                    yield Static("A member of the Cryptic family of utilities", classes="hint")
                     yield Button("Check for updates", id="s-updates", classes="primary")
             yield Static("Opens the latest release on GitHub in your browser. If its version is newer than "
                          f"{VERSION}, update with the same install command you used.", classes="hint wide")
@@ -1353,7 +1353,7 @@ class SettingsScreen(Screen):
             yield Static("The Cryptic™ family", classes="section")
             yield Static(FAMILY, classes="about")
             with Horizontal(classes="buttons"):
-                yield Button("All Cryptic™ apps", id="s-family", classes="primary")
+                yield Button("All Cryptic apps", id="s-family", classes="primary")
                 yield Button("Cryptic Vaults for Android", id="s-android")
             yield Static("Buy the dev a coffee!", classes="section")
             yield Static("Opens the tip page in your browser: Bitcoin Lightning, Bitcoin on-chain or Monero. "
@@ -1530,7 +1530,7 @@ COLUMNS = ("Device", "Name", "Size", "Encrypted", "Encryption", "Filesystem", "S
 
 
 class CrypticVaults(App):
-    TITLE = "Cryptic™ Vaults"
+    TITLE = "Cryptic Vaults"
     CSS = CSS
     BINDINGS = [
         Binding("space", "details", "Details"),
