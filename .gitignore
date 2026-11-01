@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+
+# Public repo: code only. Plans, topics and boards live in the private repo around it.
+/plans/
+/topics/
+/board.md
