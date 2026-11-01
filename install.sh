@@ -19,7 +19,47 @@ fetch() {  # fetch <repo path> <dest>: copy from this clone, or download when ru
     else curl -fsSL "$REPO_RAW/$1" -o "$2"
     fi || die "download of $1 failed"
 }
-SRC_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd || echo .)"
+case "$0" in  # through curl | sh, $0 is the shell: nothing local counts, whatever folder this runs in
+    *install.sh) SRC_DIR="$(cd "$(dirname "$0")" && pwd)" ;;
+    *) SRC_DIR="/nonexistent" ;;
+esac
+
+if [ "${1:-}" = "--help" ]; then
+    cat <<'HELP'
+NAME
+  install.sh - install, update or remove the cryptic-vaults command
+  Author: nocke
+
+USAGE
+  ./install.sh [--uninstall]
+
+ARGS:
+
+  --uninstall      remove the app; your settings are kept
+  --help           shows this menu
+
+EXAMPLES:
+
+  no flags
+
+  Install, or update to the files beside this script. Run git pull
+  first to update from a clone.
+
+  ./install.sh
+
+  --uninstall
+
+  Remove the app, and on macOS its VM and image.
+
+  ./install.sh --uninstall
+
+  One line, always the latest version:
+
+  curl -fsSL https://raw.githubusercontent.com/nockesocks/\
+cryptic-vaults/main/install.sh | sh
+HELP
+    exit 0
+fi
 
 # ── macOS: Cryptic Vaults runs in a container inside a Colima VM (docker/cryptic-vaults-mac.py) ──
 install_macos() {

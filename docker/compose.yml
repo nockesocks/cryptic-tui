@@ -12,6 +12,7 @@ services:
     init: true
     environment:
       - CRYPTIC_VAULTS_SMB_PW
+      - CRYPTIC_VAULTS_SMB_ROOT
       - DM_DISABLE_UDEV=1     # the VM's udev never confirms dm devices: cryptsetup makes its own nodes
     volumes:
       - /dev:/dev           # hot-plugged sticks appear here

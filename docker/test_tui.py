@@ -16,7 +16,7 @@ state = Path("/run/cryptic-vaults/drives.json")
 state.parent.mkdir(parents=True, exist_ok=True)
 state.write_text(json.dumps([
     {"id": "AA11", "name": "SanDisk Ultra", "size": 64 << 30, "auto": True, "where": "cryptic-vaults"},
-    {"id": "BB22", "name": "Kingston Copy", "size": 32 << 30, "auto": False, "where": "mac"},
+    {"id": "BB22", "name": "Kingston Copy", "size": 32 << 30, "auto": False, "where": "mac", "error": "macOS denied access to the drive."},
 ]))
 c.CTL = Path("/tmp/ctl")
 c.load_devices = lambda: ([], "")  # no disks in this container; release looks a drive up by serial
@@ -29,6 +29,8 @@ def requests():
 async def main():
     app = c.CrypticVaults(False)
     async with app.run_test(size=(140, 40)) as pilot:
+        await pilot.pause(2.5)                 # the denial reaches the user without opening the pane
+        assert [n.message for n in app._notifications] == ["macOS denied access to the drive."]
         await pilot.press("d")
         await pilot.pause(0.5)
         screen = app.screen
@@ -44,6 +46,17 @@ async def main():
         await pilot.pause(1.5)
         assert len(screen.query(".drive-row")) == 0
         await pilot.press("escape")
+        await pilot.press("s")
+        await pilot.pause(0.3)
+        await pilot.click("#s-help")
+        await pilot.pause(0.5)
+        assert isinstance(app.screen, c.HelpScreen), app.screen
+        await pilot.press("end")               # the guide scrolls from the keyboard
+        await pilot.pause(0.3)
+        assert app.screen.query_one("#help-text").scroll_y > 0
+        await pilot.press("escape")
+        await pilot.pause(0.2)
+        assert isinstance(app.screen, c.SettingsScreen), app.screen
     print("PASS: drives pane lists, loads, toggles auto-load, releases, and follows the wrapper's list")
 
 

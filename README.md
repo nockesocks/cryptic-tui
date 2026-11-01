@@ -73,7 +73,13 @@ git clone https://github.com/nockesocks/cryptic-vaults.git && cd cryptic-vaults 
 > [!IMPORTANT]
 > Cryptic Vaults reads your drives directly, which macOS only allows with **Full Disk Access** (System Settings ▸ Privacy & Security ▸ Full Disk Access). Grant it to your terminal app **and** to any multiplexer you run inside it (tmux, zellij…), then restart them. Without it, drives never show up.
 
+Files on a drive that only root can read, such as a backup made with `sudo` on Linux, can't be opened from the Mac, even with `sudo`. To reach them, start with `cryptic-vaults --root-share`. Anything running as you can then read and change every file on a mounted drive. New files take the owner of their folder, and existing files keep theirs.
+
 To remove Cryptic Vaults, run `./install.sh --uninstall`. Your settings are kept.
+
+### Update
+
+In Settings, **Check for updates** opens the latest release in your browser. If its version is newer than yours, run the one-line install command again. Your settings are kept. From a clone, run `git pull` first, because `./install.sh` installs the files in that clone.
 
 ## Usage
 
@@ -81,7 +87,7 @@ To remove Cryptic Vaults, run `./install.sh --uninstall`. Your settings are kept
 cryptic-vaults
 ```
 
-Type your sudo password when asked: Cryptic Vaults needs root to unlock and mount drives.
+Type your sudo password when asked: Cryptic Vaults needs root to unlock and mount drives. `cryptic-vaults --help` lists the options, and the full guide is in the app: press `s`, then **View Help**.
 
 ### Keys
 
@@ -182,7 +188,24 @@ Something still has files open on the drive. Close any terminal, file manager or
 <details>
 <summary><b>macOS: no drives show up, or the log says "Operation not permitted"</b></summary>
 
-Your terminal, or a multiplexer inside it, lacks Full Disk Access. See the [macOS install](#macos) note, then restart the app you granted it to. Errors from the Mac side are written to `~/.config/cryptic-vaults/tui/cryptic-vaults-mac.log`.
+macOS is denying access to the drive. Cryptic Vaults checks this each time it starts and shows an error naming the apps involved, and the same text goes to `~/.config/cryptic-vaults/tui/cryptic-vaults-mac.log`. macOS doesn't let an app grant this itself, so the steps are yours.
+
+Your terminal, or a multiplexer inside it, lacks Full Disk Access. The switch can also be on and still not count, for two reasons:
+
+- **The multiplexer was upgraded.** Apps installed as a plain binary, as Homebrew does, are granted by path, and an upgrade changes the path. The old entry stays in the list, and toggling it does nothing. Signed apps such as Terminal keep their grant across updates.
+- **Its server is still running.** Closing the terminal doesn't stop a multiplexer's background server, so it keeps the old binary and old permissions.
+
+To fix it:
+
+1. Quit Cryptic Vaults, then stop the server. This closes everything running inside it. For example:
+   ```sh
+   tmux kill-server
+   herdr server stop
+   zellij kill-all-sessions
+   ```
+2. In **System Settings ▸ Privacy & Security ▸ Full Disk Access**, select the old entry and remove it with **−**.
+3. Click **+**, press <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd>, and add the current binary. `realpath "$(which tmux)"` prints its path; use your multiplexer's name.
+4. Reopen your terminal, start Cryptic Vaults, and unplug and replug the drive.
 
 </details>
 

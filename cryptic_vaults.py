@@ -39,7 +39,7 @@ from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen, Screen
 from textual.theme import Theme
 from textual.widgets import (
-    Button, Checkbox, DataTable, Footer, Input, Label, ProgressBar, RichLog, Select, Switch,
+    Button, Checkbox, DataTable, Footer, Input, Label, Markdown, ProgressBar, RichLog, Select, Switch,
     Static,
 )
 
@@ -114,7 +114,7 @@ MKFS = {  # fstype -> (binary, label flag, force flag)
 FOREIGN_OWNER_FS = {"vfat", "exfat", "ntfs", "ntfs3"}  # need uid=/gid= mount opts
 
 # ───────────────────────────── about ────────────────────────────────
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 RELEASES = "https://github.com/nockesocks/cryptic-vaults/releases/latest"
 ANDROID = "https://github.com/nockesocks/cryptic-vaults-android"
 DEV_GITHUB = "https://github.com/nockesocks?tab=repositories&q=cryptic"  # the Cryptic apps only (a Cryptic org page later)
@@ -188,7 +188,7 @@ def _smb_reload():
 
 def mac_drives() -> list[dict]:
     """External drives plugged into the Mac right now, pushed in by the wrapper:
-    [{"id", "name", "size", "auto": bool, "where": "cryptic-vaults" | "mac"}]."""
+    [{"id", "name", "size", "auto": bool, "where": "cryptic-vaults" | "mac", "error": str | None}]."""
     try:
         return json.loads(Path("/run/cryptic-vaults/drives.json").read_text())
     except (OSError, ValueError):
@@ -1223,6 +1223,132 @@ Keep your keys safe. Back up first. Be kind to your future self.
 [$primary]—[/] [b]Claude[/] [$foreground 60%](Opus 5.5, made by Anthropic)  ·  1 October 2026[/]"""
 
 
+HELP_GUIDE = """\
+# Install
+
+**Linux** (`pacman`, `apt`, `dnf` or `zypper`). The installer adds what the app needs, and asks for your sudo password:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/nockesocks/cryptic-vaults/main/install.sh | sh
+```
+
+Or from a clone:
+
+```sh
+git clone https://github.com/nockesocks/cryptic-vaults.git
+cd cryptic-vaults && ./install.sh
+```
+
+**macOS.** The app runs in a small Linux VM, so install its tools first, then use either command above. The installer asks where unlocked drives should appear (default `~/cryptic-vaults`) and builds the image.
+
+```sh
+brew install colima docker docker-compose qemu
+```
+
+Then give **Full Disk Access** to your terminal and to any multiplexer inside it (see Troubleshooting).
+
+# Update
+
+In Settings, **Check for updates** opens the latest release in your browser. If its version is newer than yours, run the `curl` command above in a terminal. It always installs the latest version, and your settings are kept. Cryptic Vaults never goes online itself: the installer is a separate program, and it only runs when you run it. From a clone, run `git pull` first, because `./install.sh` installs the files in that clone.
+
+# Uninstall
+
+From a clone, run `./install.sh --uninstall`. Your settings are kept.
+
+# Start
+
+```sh
+cryptic-vaults
+```
+
+Type your sudo password when asked: the app needs root to unlock and mount drives.
+
+| Option | Where | What it does |
+|---|---|---|
+| `--help` | both | Shows the options and exits |
+| `--no-sudo` | Linux | Starts without root, to browse read-only |
+| `--root-share` | macOS | The Mac can read and change every file on a mounted drive, root-only ones too |
+
+# Keys
+
+| Key | What it does |
+|---|---|
+| `↑` `↓` | Pick a drive |
+| `space` | Details |
+| `m` | Mount (asks for the passphrase if the drive is encrypted) |
+| `u` | Unmount, and lock it if it's encrypted |
+| `e` | Encrypt (erases the drive) |
+| `f` | Format (erases the drive) |
+| `w` | Wipe (erases the drive) |
+| `c` | Make an encrypted container file |
+| `a` | Open an existing container file |
+| `d` | Drives on this Mac (macOS only) |
+| `r` | Rescan |
+| `s` | Settings |
+| `l` | Command log: every command the app has run |
+| `?` | Show or hide the keys |
+| `ctrl+p` | Menu: themes, settings, log |
+| `q` | Quit |
+
+# How to
+
+**Encrypt a USB stick.** Pick the drive marked `(usb)` and press `e`. Type a passphrase twice, type the drive's name to confirm (for example `/dev/sdb`), then press **Encrypt**. This erases the drive.
+
+**Open an encrypted drive.** Pick it (it says `● locked`), press `m`, type your passphrase and press **Mount**.
+
+**Encrypt only part of a drive.** Mount the drive with `m`, then press `c`. Choose a file name and size (for example `10G`) and type a passphrase twice. To open the file later, press `a` and give its path.
+
+**Unplug safely.** Pick the drive and press `u`. When it says `● locked`, unplug it.
+
+**Rename a drive or change its passphrase.** Press `space`, then **:: edit ::** at the bottom of the details.
+
+# On macOS
+
+- **Drives load on their own.** Plug one in before or after starting, and it shows up within a few seconds.
+- **Files appear in your mount folder**, by default `~/cryptic-vaults/<name>`. A mounted drive's details have **Open in Finder**, **Terminal here** and **Copy path**.
+- **Keep a drive on the Mac.** In its details press **Release to Mac**, and switch **Auto-load** off. Press `d` to see every drive and bring one back.
+- **`u` unmounts from the Mac first**, then locks the drive. If the Mac still has files open on it, close them when asked.
+- **`q` closes everything**, hands drives back to the Mac and shuts the VM down.
+- **Files only root can read**, such as a backup made with `sudo` on Linux, can't be opened from the Mac, even with `sudo`. Start with `cryptic-vaults --root-share` to reach them. Anything running as you can then read and change every file on a mounted drive.
+- **SMART health isn't available**: inside the VM a USB drive is a plain virtual disk.
+
+# Troubleshooting
+
+**Unmounting says "target is busy".** Something still has files open on the drive. Close it and press `u` again.
+
+**macOS: no drives show up, or "macOS denied access".** The app checks this each time it starts, and names the apps involved. Errors also go to `~/.config/cryptic-vaults/tui/cryptic-vaults-mac.log`. macOS doesn't let an app grant this itself, so:
+
+1. Quit the app and stop any multiplexer's background server, because closing the terminal doesn't stop it. This closes everything running inside it: `tmux kill-server`, `herdr server stop` or `zellij kill-all-sessions`.
+2. In **System Settings ▸ Privacy & Security ▸ Full Disk Access**, select any old entry and remove it with **−**. After a Homebrew upgrade the old entry points at a path that no longer exists, and toggling it does nothing.
+3. Click **+**, press `Cmd+Shift+G`, and add the current binary. `realpath "$(which tmux)"` prints its path; use your multiplexer's name.
+4. Reopen your terminal, start the app, and unplug and replug the drive.
+
+# Where things are
+
+- **Settings:** `~/.config/cryptic-vaults/settings.json` on Linux, `~/.config/cryptic-vaults/tui/` on macOS
+- **Project:** https://github.com/nockesocks/cryptic-vaults
+"""
+
+
+class HelpScreen(ModalScreen):
+    BINDINGS = [Binding("escape,q", "dismiss", "Close")]
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="dialog", classes="wide"):
+            yield Label(" Help", classes="title")
+            with VerticalScroll(id="help-text"):
+                yield Markdown(HELP_GUIDE)
+            with Horizontal(classes="buttons"):
+                yield Button("Close", id="close", classes="primary")
+
+    def on_mount(self):
+        self.query_one("#help-text").focus()
+
+    @on(Button.Pressed, "#close")
+    def _close(self):
+        self.dismiss()
+
+
 class AboutScreen(ModalScreen):
     BINDINGS = [Binding("escape,q,enter,space", "dismiss", "Close")]
 
@@ -1270,6 +1396,8 @@ class DrivesScreen(ModalScreen):
             await rows.mount(Static("No external drives plugged in.", classes="hint"))
         for i, m in enumerate(drives):
             where = "[b $success]in Cryptic Vaults[/]" if m["where"] == "cryptic-vaults" else "[$foreground 60%]on Mac[/]"
+            if m.get("error"):
+                where = "[b $error]macOS denied access[/]"
             await rows.mount(Horizontal(
                 Static(f"{escape(m['name'])}  {human(m['size'])}  ·  {where}", classes="drive-name"),
                 Label("Auto-load", classes="drive-auto"),
@@ -1315,9 +1443,12 @@ class SettingsScreen(Screen):
                     yield Static(f"[b]Cryptic Vaults[/]  [$foreground 60%]{VERSION}[/]")
                     yield Static("LUKS2 drive & container encryption for Linux and macOS", classes="hint")
                     yield Static("A member of the Cryptic family of utilities", classes="hint")
-                    yield Button("Check for updates", id="s-updates", classes="primary")
-            yield Static("Opens the latest release on GitHub in your browser. If its version is newer than "
-                         f"{VERSION}, update with the same install command you used.", classes="hint wide")
+                    with Horizontal(id="s-actions"):
+                        yield Button("Check for updates", id="s-updates", classes="primary")
+                        yield Button("View Help", id="s-help")
+            yield Static("Opens the latest release in your browser; Cryptic Vaults never goes online itself. If its "
+                         f"version is newer than {VERSION}, run the install command again (see View Help).",
+                         classes="hint wide")
             yield Static("Appearance", classes="section")
             with Horizontal(classes="row"):
                 yield Label("Theme", classes="rowlabel")
@@ -1379,6 +1510,10 @@ class SettingsScreen(Screen):
     @on(Button.Pressed, "#back")
     def _back(self):
         self.dismiss()
+
+    @on(Button.Pressed, "#s-help")
+    def _help(self):
+        self.app.push_screen(HelpScreen())
 
     @on(Button.Pressed, "#s-updates")
     def _updates(self):
@@ -1518,7 +1653,9 @@ App.-narrow #list.-behind { display: none; }
 #s-header { height: 9; width: 80; margin-bottom: 1; }
 #s-icon { width: 16; color: $accent; padding-top: 0; }
 #s-name { width: 1fr; padding: 1 0 0 2; }
-#s-name Button { margin-top: 1; }
+#s-actions { height: 3; margin-top: 1; }
+#s-actions Button { margin-right: 2; }
+#help-text { height: 1fr; }
 #settings .wide, #settings .about { width: 80; }
 #settings .about { margin-top: 1; }
 #settings .tips { height: 3; width: 80; margin-top: 1; }
@@ -1578,6 +1715,16 @@ class CrypticVaults(App):
         t.focus()
         if self.readonly:
             self.notify("read-only mode (not root) — browsing only", severity="warning", timeout=6)
+        if MACOS:
+            self._mac_errors_shown = set()
+            self.set_interval(2, self.show_mac_errors)
+
+    def show_mac_errors(self):
+        """The wrapper couldn't hand a drive over; without this it just looks undetected."""
+        errors = {m["error"] for m in mac_drives() if m.get("error")}
+        for e in errors - self._mac_errors_shown:
+            self.notify(escape(e), severity="error", timeout=60)
+        self._mac_errors_shown = errors
 
     def apply_settings(self):
         self.theme = SETTINGS["theme"] if SETTINGS["theme"] in self.available_themes else "cryptic-vaults-mocha"
@@ -2075,7 +2222,45 @@ class CrypticVaults(App):
             warning=self._danger_text(d, "Wipe drive"), confirm=d.path, ok_label="Wipe", danger=True), go)
 
 
+CLI_HELP = """NAME
+  cryptic-vaults - unlock, mount and encrypt LUKS2 drives and containers
+  Author: nocke
+
+USAGE
+  cryptic-vaults [--no-sudo]
+
+ARGS:
+
+  --no-sudo        start without root, to browse read-only
+  --help           shows this menu
+
+EXAMPLES:
+
+  no flags
+
+  Manage your drives. Asks for your sudo password, which unlocking and
+  mounting need.
+
+  cryptic-vaults
+
+  --no-sudo
+
+  Look at your drives without root. Nothing can be changed.
+
+  cryptic-vaults --no-sudo
+
+  The full guide is in the app: press s, then View Help.
+  To update, run the install command again:
+
+  curl -fsSL https://raw.githubusercontent.com/nockesocks/\\
+cryptic-vaults/main/install.sh | sh"""
+
+
 def main():
+    if sys.argv[1:] == ["--help"]:
+        return print(CLI_HELP)
+    if sys.argv[1:] not in ([], ["--no-sudo"]):
+        sys.exit("cryptic-vaults: unknown option; see cryptic-vaults --help")
     readonly = "--no-sudo" in sys.argv
     if os.geteuid() != 0 and not readonly:
         if not shutil.which("sudo"):

@@ -137,6 +137,53 @@ def external_disks() -> set:
     return set(plistlib.loads(p.stdout).get("WholeDisks", [])) if p.returncode == 0 and p.stdout else set()
 
 
+def ancestor_apps() -> list[str]:
+    """The non-system programs above this one: macOS may hold any of them responsible for raw disk access."""
+    apps, pid = [], os.getppid()
+    while pid > 1:
+        ps = subprocess.run(["/bin/ps", "-o", "ppid=", "-p", str(pid)], capture_output=True, text=True).stdout.strip()
+        lsof = subprocess.run(["/usr/sbin/lsof", "-a", "-p", str(pid), "-d", "txt", "-Fn"], capture_output=True, text=True).stdout
+        path = next((line[1:] for line in lsof.splitlines() if line.startswith("n")), "")
+        if path and not path.startswith(("/usr/", "/bin/", "/sbin/", "/System/")):
+            apps.append(path.split(".app/")[0] + ".app" if ".app/" in path else path)
+        pid = int(ps) if ps.isdigit() else 1
+    return list(dict.fromkeys(apps))
+
+
+def access_denied_message(apps: list[str]) -> str:
+    """macOS offers no way to grant this from a script, so say exactly what the user has to do."""
+    gone = [a for a in apps if not os.path.exists(a)]
+    msg = ("macOS denied access to the drive. In System Settings ▸ Privacy & Security ▸ Full Disk Access, remove any "
+           f"old entries and add: {', '.join(a for a in apps if a not in gone) or 'your terminal and any multiplexer in it'}. "
+           "Then quit them completely and reopen.")
+    if gone:
+        msg += f" Still running, but upgraded or deleted on disk, so it must be stopped first: {', '.join(gone)}."
+    return msg
+
+
+def has_disk_access() -> bool:
+    """Ask macOS directly: as root, only its privacy policy can refuse a read-only open of the internal disk.
+    Nothing is read. Any other failure says nothing about the grant, so it counts as access."""
+    try:
+        os.close(os.open("/dev/rdisk0", os.O_RDONLY))
+    except PermissionError:
+        return False
+    except OSError:
+        pass
+    return True
+
+
+def check_disk_access():
+    """Before the VM boots, every run, so an upgraded terminal or multiplexer is caught first."""
+    if has_disk_access():
+        return
+    msg = access_denied_message(ancestor_apps())
+    log(f"startup: {msg}")
+    print(f"\n{msg}\nDrives won't show up until this is fixed.\n", flush=True)
+    if sys.stdin.isatty() and input("Continue anyway? [y/N] ").strip().lower() != "y":
+        sys.exit(1)
+
+
 def log(msg: str):
     """Wrapper errors go to a file: printing would draw over the TUI."""
     with open(CONFIG / "cryptic-vaults-mac.log", "a") as f:
@@ -169,8 +216,7 @@ class Bridge(threading.Thread):
                 self.handle_requests()
                 self.sync_shares()
             except PermissionError as e:  # macOS privacy settings, not file permissions
-                log(f"bridge: {e!r} — give Full Disk Access to your terminal and any multiplexer in it "
-                    "(System Settings ▸ Privacy & Security), then restart them")
+                log(f"bridge: {e!r} — {access_denied_message(ancestor_apps())}")
             except Exception as e:  # keep the TUI alive; the next round retries
                 log(f"bridge: {e!r}")
             self.stop.wait(0.25)
@@ -234,14 +280,20 @@ class Bridge(threading.Thread):
         if os.geteuid() == 0:
             os.chown(self.prefs_file, PW.pw_uid, PW.pw_gid)
         state = [{**{k: i[k] for k in ("id", "name", "size")}, "auto": self.auto(d),
-                  "where": "cryptic-vaults" if d in self.disks else "mac"} for d, i in sorted(self.info.items())]
+                  "where": "cryptic-vaults" if d in self.disks else "mac", "error": i.get("error")} for d, i in sorted(self.info.items())]
         as_user([*DOCKER, "exec", "-i", "cryptic-vaults", "sh", "-c",
                  "mkdir -p /run/cryptic-vaults && cat > /run/cryptic-vaults/drives.new && mv /run/cryptic-vaults/drives.new /run/cryptic-vaults/drives.json"],
                 input=json.dumps(state).encode(), check=False, capture_output=True)
 
     def plug(self, d: str):
         subprocess.run(["/usr/sbin/diskutil", "unmountDisk", d], capture_output=True)  # it's Cryptic Vaults' now
-        os.chown(f"/dev/r{d}", PW.pw_uid, -1)  # QEMU runs as the user; reset on unplug or replug
+        try:
+            os.chown(f"/dev/r{d}", PW.pw_uid, -1)  # QEMU runs as the user; reset on unplug or replug
+        except PermissionError as e:  # macOS privacy settings, not file permissions; Load in the drives pane retries
+            self.info[d]["error"] = access_denied_message(ancestor_apps())
+            log(f"bridge: {e!r} — {self.info[d]['error']}")
+            return
+        self.info[d].pop("error", None)
         q = QMP()
         try:
             q.cmd("blockdev-add", driver="raw", **{"node-name": f"c_{d}"},
@@ -319,9 +371,50 @@ def build():
     as_user(["colima", "stop", PROFILE], check=False, capture_output=True)
 
 
+CLI_HELP = """NAME
+  cryptic-vaults - unlock, mount and encrypt LUKS2 drives on a Mac
+  Author: nocke
+
+USAGE
+  cryptic-vaults [--root-share]
+
+ARGS:
+
+  --root-share     the Mac can read and change every file on a mounted
+                   drive, including files only root can read
+  --help           shows this menu
+
+EXAMPLES:
+
+  no flags
+
+  Manage your drives. Asks for your sudo password, boots the VM, and
+  shows unlocked drives in your mount folder.
+
+  cryptic-vaults
+
+  --root-share
+
+  Reach a file that even sudo can't open from the Mac, such as a backup
+  made with sudo on Linux. Anything running as you can then read and
+  change every file on a mounted drive, so use it only when needed.
+
+  cryptic-vaults --root-share
+
+  The full guide is in the app: press s, then View Help.
+  To update, run the install command again:
+
+  curl -fsSL https://raw.githubusercontent.com/nockesocks/\\
+cryptic-vaults/main/install.sh | sh"""
+
+
 def main():
-    if sys.argv[1:] == ["--build"]:
+    if sys.argv[1:] == ["--build"]:  # install.sh only
         return build()
+    if sys.argv[1:] == ["--help"]:
+        return print(CLI_HELP)
+    if sys.argv[1:] not in ([], ["--root-share"]):
+        sys.exit("cryptic-vaults: unknown option; see cryptic-vaults --help")
     if os.geteuid() != 0:  # sudo first, as on Linux; the raw disks are root-only
         env = [f"{k}={os.environ[k]}" for k in ("TERM", "COLORTERM", "LANG", "__CFBundleIdentifier") if k in os.environ]
         os.execvp("sudo", ["sudo", "/usr/bin/env", *env, f"CRYPTIC_VAULTS_PATH={os.environ.get('PATH', '')}",
@@ -332,9 +425,14 @@ def main():
         as_user(["mkdir", "-p", str(d)])
     for p in [*(CTL / "shares").glob("*"), *(CTL / "requests").glob("*")]:
         p.unlink()
+    check_disk_access()
     start_vm()
     smb_pw = secrets.token_urlsafe(24)
-    compose("up", "-d", "--force-recreate", env={"CRYPTIC_VAULTS_SMB_PW": smb_pw},
+    root_share = sys.argv[1:] == ["--root-share"]
+    if root_share:
+        say("root share on: anything running as you can read and change every file on a mounted drive")
+    compose("up", "-d", "--force-recreate",
+            env={"CRYPTIC_VAULTS_SMB_PW": smb_pw, "CRYPTIC_VAULTS_SMB_ROOT": "1" if root_share else "0"},
             stdout=subprocess.DEVNULL)
     bridge = Bridge(smb_pw)
     bridge.start()
